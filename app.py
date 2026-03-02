@@ -91,3 +91,29 @@ with col1:
 
                     if img is None:
                         st.error("Error decoding image.")
+                    else:
+                        # 1. OCR Stage
+                        raw_text = " ".join(reader.readtext(img, detail=0))
+                        
+                        if not raw_text.strip():
+                            st.warning("No text detected in image.")
+                        else:
+                            # 2. AI Architecture Stage (Requesting HTML colors)
+                            prompt = f"""
+                            Convert this text into a professional document. 
+                            1. Use <h2 style='color:#38bdf8;'>Heading Name</h2> for all headings.
+                            2. Use <span style='color:#fbbf24; font-weight:bold;'>Term</span> for important keywords.
+                            3. End with '--- FINAL SUMMARY ---'.
+                            TEXT: {raw_text}
+                            """
+                            
+                            chat = client.chat.completions.create(
+                                messages=[{"role": "user", "content": prompt}],
+                                model="llama-3.3-70b-versatile"
+                            )
+                            full_output = chat.choices[0].message.content
+                            
+                            if "--- FINAL SUMMARY ---" in full_output:
+                                notes, summary = full_output.split("--- FINAL SUMMARY ---")
+                            else:
+                                notes,

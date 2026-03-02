@@ -47,4 +47,47 @@ st.markdown("""
         color: #38bdf8 !important;
     }
 
-    .signature { color: #c084fc; font-weight: bold
+    .signature { color: #c084fc; font-weight: bold; text-align: center; margin-top: 50px; }
+    </style>
+    """, unsafe_allow_html=True)
+
+# --- API Key Handling ---
+GROQ_API_KEY = st.secrets.get("GROQ_API_KEY")
+
+@st.cache_resource
+def load_ocr():
+    return easyocr.Reader(['en'], gpu=False)
+
+if not GROQ_API_KEY:
+    st.error("❌ GROQ_API_KEY missing in Secrets.")
+    st.stop()
+
+reader = load_ocr()
+client = Groq(api_key=GROQ_API_KEY)
+
+# --- UI Header ---
+st.title("🌌 DOCUMENT ARCHITECT PRO")
+st.markdown('<div class="jaman-tagline">Transforming handwritten chaos into structured digital gold.</div>', unsafe_allow_html=True)
+
+if "history" not in st.session_state:
+    st.session_state.history = []
+
+col1, col2 = st.columns([1, 2])
+
+with col1:
+    st.subheader("📸 Upload Source")
+    uploaded_file = st.file_uploader("Drop image here", type=["jpg", "jpeg", "png"])
+    
+    if uploaded_file is not None:
+        image_preview = Image.open(uploaded_file)
+        st.image(image_preview, caption="Preview", use_container_width=True)
+        uploaded_file.seek(0)
+        
+        if st.button("ARCHITECT DOCUMENT ✨"):
+            with st.spinner("Styling your document..."):
+                try:
+                    file_bytes = np.asarray(bytearray(uploaded_file.read()), dtype=np.uint8)
+                    img = cv2.imdecode(file_bytes, cv2.IMREAD_COLOR)
+
+                    if img is None:
+                        st.error("Error decoding image.")
